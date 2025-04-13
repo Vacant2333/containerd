@@ -34,6 +34,11 @@ import (
 	"github.com/checkpoint-restore/go-criu/v7/stats"
 	"github.com/checkpoint-restore/go-criu/v7/utils"
 	"github.com/containerd/containerd/api/types/runc/options"
+	"github.com/containerd/continuity/fs"
+	"github.com/containerd/errdefs"
+	"github.com/containerd/log"
+	"github.com/containerd/platforms"
+
 	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/core/content"
 	"github.com/containerd/containerd/v2/core/images"
@@ -46,10 +51,6 @@ import (
 	"github.com/containerd/containerd/v2/pkg/protobuf/proto"
 	ptypes "github.com/containerd/containerd/v2/pkg/protobuf/types"
 	"github.com/containerd/containerd/v2/plugins"
-	"github.com/containerd/continuity/fs"
-	"github.com/containerd/errdefs"
-	"github.com/containerd/log"
-	"github.com/containerd/platforms"
 
 	"github.com/distribution/reference"
 	"github.com/opencontainers/image-spec/identity"
@@ -315,14 +316,30 @@ func (c *criService) CRImportCheckpoint(
 	// checkpoint archive as NAME@DIGEST. The checkpoint archive also contains
 	// the tag with which it was initially pulled.
 	// First step is to pull NAME@DIGEST
-	containerdImage, err := c.client.Pull(ctx, config.RootfsImageRef)
+	/*
+		config.dump:
+		{
+			"id": "d741723be788864d6ffdbd90a2d2f5d2588635e95fa4decdba57ab0116e3ffce",
+			"name": "container_ready-demo-885f6b79c-bjx9s_capes-feasibility_010c76af-7595-428f-bba1-cb76d1b6e2e4_0",
+			"rootfsImage": "docker.io/vacanttt/ready-demo:1.4",
+			"rootfsImageRef": "sha256:d15b4a40d243b74c67943e72861ed34db875f0ab76a5e0fa86c9745c98cca992",
+			"rootfsImageName": "docker.io/vacanttt/ready-demo:1.4",
+			"runtime": "io.containerd.runc.v2",
+			"createdTime": "2025-04-13T07:14:27.033532886Z",
+			"checkpointedTime": "2025-04-13T07:15:32.985618291Z",
+			"restoredTime": "0001-01-01T00:00:00Z",
+			"restored": false
+		}
+	*/
+	baseImage := fmt.Sprintf("%s@%s", config.RootfsImageName, config.RootfsImageRef)
+	containerdImage, err := c.client.Pull(ctx, baseImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to pull checkpoint base image %s: %w", config.RootfsImageRef, err)
 	}
 	if _, err := reference.ParseAnyReference(config.RootfsImageName); err != nil {
 		return "", fmt.Errorf("error parsing reference: %q is not a valid repository/tag %v", config.RootfsImageName, err)
 	}
-	tagImage, err := c.client.ImageService().Get(ctx, config.RootfsImageRef)
+	tagImage, err := c.client.ImageService().Get(ctx, baseImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checkpoint base image %s: %w", config.RootfsImageRef, err)
 	}
