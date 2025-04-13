@@ -224,7 +224,7 @@ func (c *criService) CRImportCheckpoint(
 	// Load spec.dump from temporary directory
 	dumpSpec := new(spec.Spec)
 	if _, err := crmetadata.ReadJSONFile(dumpSpec, mountPoint, crmetadata.SpecDumpFile); err != nil {
-		return "", fmt.Errorf("failed to read %q: %w", crmetadata.SpecDumpFile, err)
+		return "", fmt.Errorf("xxx failed to read %q: %w", crmetadata.SpecDumpFile, err)
 	}
 
 	// Load config.dump from temporary directory
@@ -319,27 +319,26 @@ func (c *criService) CRImportCheckpoint(
 	/*
 		config.dump:
 		{
-			"id": "d741723be788864d6ffdbd90a2d2f5d2588635e95fa4decdba57ab0116e3ffce",
-			"name": "container_ready-demo-885f6b79c-bjx9s_capes-feasibility_010c76af-7595-428f-bba1-cb76d1b6e2e4_0",
+			"id": "d933a14da7890db20b673283c26ca165bc590c7ddf0b2bce8a83c01fc92ce3cc",
+			"name": "container_ready-demo-885f6b79c-74xcx_capes-feasibility_0196030a-05db-4ec2-a20e-e787fb421ba8_0",
 			"rootfsImage": "docker.io/vacanttt/ready-demo:1.4",
-			"rootfsImageRef": "sha256:d15b4a40d243b74c67943e72861ed34db875f0ab76a5e0fa86c9745c98cca992",
+			"rootfsImageRef": "docker.io/vacanttt/ready-demo@sha256:e563cad3145431c24563b1aa323f855402f0ef0ef4db794d8beb94c1b4c10de9",
 			"rootfsImageName": "docker.io/vacanttt/ready-demo:1.4",
 			"runtime": "io.containerd.runc.v2",
-			"createdTime": "2025-04-13T07:14:27.033532886Z",
-			"checkpointedTime": "2025-04-13T07:15:32.985618291Z",
+			"createdTime": "2025-04-13T09:49:23.839790842Z",
+			"checkpointedTime": "2025-04-13T09:50:40.234917794Z",
 			"restoredTime": "0001-01-01T00:00:00Z",
 			"restored": false
 		}
 	*/
-	baseImage := fmt.Sprintf("%s@%s", config.RootfsImageName, config.RootfsImageRef)
-	containerdImage, err := c.client.Pull(ctx, baseImage)
+	containerdImage, err := c.client.Pull(ctx, config.RootfsImageRef)
 	if err != nil {
 		return "", fmt.Errorf("failed to pull checkpoint base image %s: %w", config.RootfsImageRef, err)
 	}
 	if _, err := reference.ParseAnyReference(config.RootfsImageName); err != nil {
 		return "", fmt.Errorf("error parsing reference: %q is not a valid repository/tag %v", config.RootfsImageName, err)
 	}
-	tagImage, err := c.client.ImageService().Get(ctx, baseImage)
+	tagImage, err := c.client.ImageService().Get(ctx, config.RootfsImageRef)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checkpoint base image %s: %w", config.RootfsImageRef, err)
 	}
@@ -369,7 +368,7 @@ func (c *criService) CRImportCheckpoint(
 		time.Sleep(time.Microsecond * time.Duration(i))
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve image %q during checkpoint import: %w", config.RootfsImageName, err)
+		return "", fmt.Errorf("failed to resolve image %q during checkpoint import: %w, test3", config.RootfsImageName, err)
 	}
 	imageConfig := image.ImageSpec.Config
 	env := append([]string{}, imageConfig.Env...)
